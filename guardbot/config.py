@@ -37,6 +37,8 @@ D1_MODEL_ID = os.getenv("D1_MODEL_ID", "fmops/distilbert-prompt-injection")
 D1_LABEL_MAP = {"LABEL_0": "benign", "LABEL_1": "injection",
                 "LEGIT": "benign", "INJECTION": "injection"}
 D1_THRESHOLD = float(os.getenv("D1_THRESHOLD", "0.5"))
+# -1 = CPU (default). On a GPU box set D1_DEVICE=0 to use cuda:0 via torch.
+D1_DEVICE = int(os.getenv("D1_DEVICE", "-1"))
 
 # Detector 2: local tiny instruction-tuned LLM-as-judge (llama.cpp GGUF)
 JUDGE_BACKEND = os.getenv("JUDGE_BACKEND", "local")  # local | api
@@ -44,6 +46,10 @@ JUDGE_GGUF_REPO = os.getenv("JUDGE_GGUF_REPO", "Qwen/Qwen2.5-0.5B-Instruct-GGUF"
 JUDGE_GGUF_FILE = os.getenv("JUDGE_GGUF_FILE", "qwen2.5-0.5b-instruct-q4_k_m.gguf")
 JUDGE_N_CTX = int(os.getenv("JUDGE_N_CTX", "2048"))
 JUDGE_N_THREADS = int(os.getenv("JUDGE_N_THREADS", "2"))
+# Layers offloaded to the GPU. 0 = pure CPU (default, no CUDA build needed).
+# -1 = offload everything; only meaningful if llama-cpp-python was built with
+# CMAKE_ARGS="-DGGML_CUDA=on".
+JUDGE_N_GPU_LAYERS = int(os.getenv("JUDGE_N_GPU_LAYERS", "0"))
 
 # ---------------------------------------------------------------- policy
 # "or"  -> block if EITHER detector fires   (recall-favoring)

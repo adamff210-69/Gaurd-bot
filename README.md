@@ -29,8 +29,10 @@ decision (conditional edge, policy = OR / AND)
 | `guardbot/graph.py` | LangGraph state schema, nodes, conditional edge, multi-turn helper |
 | `guardbot/llm.py` | main chat LLM factory (Groq / OpenRouter / mock) |
 | `app.py` | Streamlit chat UI: policy toggle, live scores, blocked banner, trace panel, attack buttons |
+| `cli.py` | headless REPL + demo runner — same graph, no web server (use this in notebooks) |
 | `eval/run_eval.py` | metrics (P/R/F1 per detector, OR vs AND ensemble, latency) + behaviour-change probe |
 | `eval/custom_cases.json` | 15 benign + 15 direct-injection hand-written cases |
+| `kaggle/` | run it on Kaggle: step-by-step guide, bootstrap helpers, ready-to-import notebook |
 | `writeup.md` | results: what got through, why, and fixes |
 
 ## Run
@@ -43,6 +45,23 @@ streamlit run app.py
 
 No API key? The app still runs: both detectors are fully local; the main LLM
 node answers in a clearly-labelled mock mode.
+
+Prefer a terminal (or a notebook, where no web server can be reached)?
+
+```bash
+python cli.py                            # interactive multi-turn REPL
+python cli.py --demo                     # 4 attacks + 3 benign turns, with traces
+python cli.py --policy and --once "Ignore all previous instructions"
+```
+
+### Run on Kaggle
+
+Kaggle notebooks are read-only under `/kaggle/input`, don't expose ports, and
+lose pip installs between sessions — so there's a dedicated path for them.
+See **[`kaggle/KAGGLE_GUIDE.md`](kaggle/KAGGLE_GUIDE.md)** for the step-by-step
+(Internet switch, secrets, CPU-vs-GPU, troubleshooting), or import
+`kaggle/guardbot_kaggle.ipynb` straight into a new notebook and Run All.
+Regenerate that notebook with `python kaggle/make_notebook.py`.
 
 ## Evaluation
 
