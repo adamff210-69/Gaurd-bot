@@ -117,8 +117,12 @@ Either way it puts `kaggle/bootstrap.py` on `sys.path`. If the code came from
 `/tmp` — necessary because the pipeline writes `logs/blocked_events.jsonl` and
 the eval harness writes `eval/results.json`.
 
-> `REF` pins the clone to the branch these helpers live on. Once that branch is
-> merged into `main`, set `REF = None`.
+> `REF` pins the clone to the branch these helpers live on. If that branch is
+> gone (merged and deleted) the cell automatically retries the default branch,
+> and then asserts that `kaggle/bootstrap.py` actually came along — so a clone
+> of a branch without the helpers fails here with a clear message instead of
+> two cells later with `ModuleNotFoundError: bootstrap`. Set `REF = None` once
+> the branch is merged into `main`.
 """)
 
 code('''
@@ -139,20 +143,28 @@ def find_attached():
             return os.path.dirname(os.path.dirname(os.path.abspath(hit)))
     return None
 
+def do_clone(ref):
+    subprocess.run(["rm", "-rf", SRC], check=False)
+    cmd = ["git", "clone", "--depth", "1"] + (["--branch", ref] if ref else [])
+    return subprocess.run(cmd + [REPO_URL, SRC]).returncode == 0
+
 REPO_SRC = find_attached()
 if REPO_SRC:
     print(f"using attached copy: {REPO_SRC}")
 else:
-    subprocess.run(["rm", "-rf", SRC], check=False)
-    clone = ["git", "clone", "--depth", "1"]
-    if REF:
-        clone += ["--branch", REF]
-    cp = subprocess.run(clone + [REPO_URL, SRC])
-    assert cp.returncode == 0, (
-        "git clone failed — is the Internet switch ON? (right panel -> Notebook "
-        f"settings). If REF={REF!r} no longer exists, set REF = None.")
+    ok = do_clone(REF)
+    if not ok and REF:
+        print(f"branch {REF!r} unavailable -> retrying on the default branch")
+        ok = do_clone(None)
+    assert ok, ("git clone failed — is the Internet switch ON? "
+                "(right panel -> Notebook settings -> Internet)")
     REPO_SRC = SRC
-    print(f"cloned {REF or 'default branch'} to: {REPO_SRC}")
+    print(f"cloned to: {REPO_SRC}")
+
+# The helpers must have come along, or the next cell fails confusingly.
+assert os.path.isfile(os.path.join(REPO_SRC, "kaggle", "bootstrap.py")), (
+    f"{REPO_SRC} has no kaggle/bootstrap.py. The Kaggle helpers live on branch "
+    f"{REF!r} — set REF to a branch that has them, or merge it and set REF = None.")
 
 # put bootstrap.py on sys.path
 for cand in (os.path.join(REPO_SRC, "kaggle"), os.path.join(SRC, "kaggle")):

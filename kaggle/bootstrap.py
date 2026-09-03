@@ -143,22 +143,40 @@ def _can_import(module: str) -> bool:
 
 # ------------------------------------------------------------------- source
 def clone_repo(dest: str = SRC_DIR, ref: str | None = None,
-               url: str = REPO_URL) -> str:
-    """git clone the public repo into a writable dir. Returns the repo root."""
+               url: str = REPO_URL, fallback_default: bool = True) -> str:
+    """git clone the public repo into a writable dir. Returns the repo root.
+
+    If `ref` no longer exists (e.g. the branch was merged and deleted) and
+    fallback_default is set, retries against the default branch. Verifies the
+    kaggle helpers came along, because a clone of a branch without them fails
+    confusingly later on `import bootstrap`.
+    """
     if os.path.isfile(os.path.join(dest, "guardbot", "config.py")):
         _log(f"repo already present at {dest}")
         return dest
     if os.path.isdir(dest):
+        _force_writable(dest)
         shutil.rmtree(dest, ignore_errors=True)
-    cmd = ["git", "clone", "--depth", "1"]
-    if ref:
-        cmd += ["--branch", ref]
-    cmd += [url, dest]
-    cp = _run(cmd)
-    if cp.returncode != 0:
+
+    def _attempt(branch: str | None) -> bool:
+        cmd = ["git", "clone", "--depth", "1"]
+        if branch:
+            cmd += ["--branch", branch]
+        return _run(cmd + [url, dest]).returncode == 0
+
+    ok = _attempt(ref)
+    if not ok and ref and fallback_default:
+        _log(f"branch {ref!r} unavailable → retrying on the default branch")
+        ok = _attempt(None)
+    if not ok:
         raise RuntimeError(
             "git clone failed — is the notebook's Internet switch ON? "
             "(Settings → Internet → On)")
+    if not os.path.isfile(os.path.join(dest, "kaggle", "bootstrap.py")):
+        raise RuntimeError(
+            f"cloned code has no kaggle/bootstrap.py. The Kaggle helpers live on "
+            f"branch {ref or '(default)'} — pass a ref that has them, or merge "
+            f"that branch into the default branch.")
     return dest
 
 
