@@ -1,0 +1,12 @@
+langchain>=0.3
+langgraph>=0.2
+langchain-groq>=0.2
+langchain-openai>=0.2
+transformers>=4.44
+torch>=2.3            # CPU wheel is fine: pip install torch --index-url https://download.pytorch.org/whl/cpu
+llama-cpp-python>=0.3
+huggingface_hub>=0.24
+streamlit>=1.37
+python-dotenv>=1.0
+pandas>=2.0
+pyarrow>=15
