@@ -6,3 +6,4 @@ env/
 venv/
 logs/
 .pytest_cache/
+kaggle-outputs/

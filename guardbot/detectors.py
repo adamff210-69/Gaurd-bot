@@ -34,7 +34,7 @@ def _get_d1():
                 tokenizer=config.D1_MODEL_ID,
                 truncation=True,
                 max_length=512,
-                device=-1,  # CPU
+                device=config.D1_DEVICE,  # -1 = CPU, 0 = cuda:0
             )
         return _d1_pipe
 
@@ -104,6 +104,7 @@ def _get_local_judge():
                 model_path=path,
                 n_ctx=config.JUDGE_N_CTX,
                 n_threads=config.JUDGE_N_THREADS,
+                n_gpu_layers=config.JUDGE_N_GPU_LAYERS,
                 verbose=False,
             )
         return _judge_llm
