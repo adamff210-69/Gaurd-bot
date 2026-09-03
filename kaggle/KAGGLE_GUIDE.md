@@ -66,10 +66,15 @@ Skip this step entirely for mock mode — nothing else changes.
 In the notebook editor: **File → Import Notebook** → upload
 `kaggle/guardbot_kaggle.ipynb` from this repo.
 
-Get that file any way you like:
-- download it from GitHub (`github.com/adamff210-69/rag` → `kaggle/` →
-  `guardbot_kaggle.ipynb` → *Download raw file*), or
-- `git clone https://github.com/adamff210-69/rag.git` locally and grab it.
+Grab that file from the branch the helpers live on:
+
+```
+https://raw.githubusercontent.com/adamff210-69/rag/arena/01a06550-rag/kaggle/guardbot_kaggle.ipynb
+```
+
+(or `git clone -b arena/01a06550-rag https://github.com/adamff210-69/rag.git`
+locally and take `kaggle/guardbot_kaggle.ipynb`). Once the branch is merged into
+`main`, the plain `main` path works and you can set `REF = None` in code cell 2.
 
 The import replaces the starter cell with 26 cells (12 code, 14 markdown).
 
@@ -153,6 +158,7 @@ assert http == "200", "Internet switch is OFF — turn it on and re-run."
 import glob, os, subprocess, sys
 
 REPO_URL = "https://github.com/adamff210-69/rag.git"
+REF = "arena/01a06550-rag"   # branch the kaggle/ helpers live on; None once merged
 SRC = "/tmp/guardbot-src"
 
 def find_attached():
@@ -168,8 +174,9 @@ if REPO_SRC:
     print("using attached copy:", REPO_SRC)
 else:
     subprocess.run(["rm", "-rf", SRC], check=False)
-    assert subprocess.run(["git", "clone", "--depth", "1", REPO_URL, SRC]).returncode == 0, \
-        "git clone failed — is Internet ON?"
+    clone = ["git", "clone", "--depth", "1"] + (["--branch", REF] if REF else [])
+    assert subprocess.run(clone + [REPO_URL, SRC]).returncode == 0, \
+        "git clone failed — is Internet ON? (or REF no longer exists: set REF = None)"
     REPO_SRC = SRC
 
 for cand in (os.path.join(REPO_SRC, "kaggle"), os.path.join(SRC, "kaggle")):
@@ -322,6 +329,7 @@ starts a server you cannot reach. Three options, best first:
 |---|---|---|
 | Cell 1 assertion fails / `HTTP 000` | Internet off | Notebook settings → **Internet → On**, phone-verify, re-run |
 | `git clone` returns non-zero | Internet off, or transient | Same as above; or attach the repo as a Dataset and re-run B2 |
+| Clone works but `ModuleNotFoundError: bootstrap` | Cloned `main`, which lacks `kaggle/` | Set `REF = "arena/01a06550-rag"` (or merge the branch and set `REF = None`), re-run B2 |
 | Install hangs ~10 min at `llama-cpp-python` | No prebuilt wheel for this Python; compiling from source | Let it finish (cmake + gcc are in the image), or `JUDGE_BACKEND=api` |
 | Detector 2 reasons say `heuristic fallback … ModuleNotFoundError` | `llama_cpp` missing | Graceful degradation by design. For the real judge see the row above |
 | Every answer says *mock mode* | No API key attached | Add-ons → Secrets → `GROQ_API_KEY`, tick it under Secrets, re-run B4 |

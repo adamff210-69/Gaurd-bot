@@ -116,12 +116,18 @@ Either way it puts `kaggle/bootstrap.py` on `sys.path`. If the code came from
 `/kaggle/input` (read-only), `setup()` in cell 4 makes a writable copy under
 `/tmp` — necessary because the pipeline writes `logs/blocked_events.jsonl` and
 the eval harness writes `eval/results.json`.
+
+> `REF` pins the clone to the branch these helpers live on. Once that branch is
+> merged into `main`, set `REF = None`.
 """)
 
 code('''
 import glob, os, subprocess, sys
 
 REPO_URL = "https://github.com/adamff210-69/rag.git"
+# The kaggle/ helpers currently live on this branch. Set REF = None (or "main")
+# once they have been merged into the default branch.
+REF = "arena/01a06550-rag"
 SRC = "/tmp/guardbot-src"
 
 def find_attached():
@@ -138,11 +144,15 @@ if REPO_SRC:
     print(f"using attached copy: {REPO_SRC}")
 else:
     subprocess.run(["rm", "-rf", SRC], check=False)
-    cp = subprocess.run(["git", "clone", "--depth", "1", REPO_URL, SRC])
+    clone = ["git", "clone", "--depth", "1"]
+    if REF:
+        clone += ["--branch", REF]
+    cp = subprocess.run(clone + [REPO_URL, SRC])
     assert cp.returncode == 0, (
-        "git clone failed — is the Internet switch ON? (right panel -> Notebook settings)")
+        "git clone failed — is the Internet switch ON? (right panel -> Notebook "
+        f"settings). If REF={REF!r} no longer exists, set REF = None.")
     REPO_SRC = SRC
-    print(f"cloned to: {REPO_SRC}")
+    print(f"cloned {REF or 'default branch'} to: {REPO_SRC}")
 
 # put bootstrap.py on sys.path
 for cand in (os.path.join(REPO_SRC, "kaggle"), os.path.join(SRC, "kaggle")):
